@@ -16,6 +16,7 @@
 package main
 
 // Add import(s).
+import "fmt"
 
 // administrator represents a person or other entity capable of administering
 // hardware and software infrastructure.
@@ -31,18 +32,37 @@ type developer interface {
 // =============================================================================
 
 // Declare a struct type named sysadmin: it should have a name field.
+type sysadmin struct {
+	administrator
+	name string
+}
 
 // Define an administrate method on the sysadmin type, implementing the
 // administrator interface.  administrate should print out the name of the
 // sysadmin, as well as the system they are administering.
+func (s *sysadmin) administrate(system string) {
+	fmt.Println(s.name, " is administering ", system)
+}
 
 // Declare a struct type named programmer: it should have a name field.
+type programmer struct {
+	developer
+	name string
+}
 
 // Define a develop method on the programmer type, implementing the developer
 // interface.  develop should print out the name of the programmer, as well as
 // the system they are developing.
+func (p *programmer) develop(system string) {
+	fmt.Println(p.name, " is developing ", system)
+}
 
 // Declare a struct type named company: it should embed administrator and developer.
+
+type company struct {
+	administrator
+	developer
+}
 
 // =============================================================================
 
@@ -99,25 +119,46 @@ var tasks = []struct {
 
 func main() {
 	// Create a variable named admins of type adminlist.
+	admins := adminlist{}
 
 	// Create a variable named devs of type devlist.
+	devs := devlist{}
 
 	// Push a new sysadmin onto admins.
-
+	admins.pushAdmin(&sysadmin{name: "Josh"})
 	// Push two new programmers onto devs.
+	devs.pushDev(&programmer{name: "Lorenzo"})
+	devs.pushDev(&programmer{name: "Carrie"})
 
 	// Create a variable named techfirm of type company, and initialize it by
 	// hiring (popping) an administrator from admins and a developer from devs.
+	techfirm := company{
+		admins.popAdmin(),
+		devs.popDev(),
+	}
 
 	// Push techfirm onto both devs and admins (we can now transparently
 	// outsource to techfirm for development and administrative needs).
+	admins.pushAdmin(&techfirm)
+	devs.pushDev(&techfirm)
 
 	// Iterate over tasks.
 	for _, task := range tasks {
 		// Check if the task needs a developer. If so, pop a developer from devs,
 		// print its type information, and have it develop the system.
+		if task.needsDev {
+			d := devs.popDev()
+			fmt.Printf("Developer type: %T\n", d)
+			d.develop(task.system)
+		}
 
 		// Check if the task needs an administrator. If so, pop an administrator from
 		// admins, print its type information, and have it administrate the system.
+		if task.needsAdmin {
+			a := admins.popAdmin()
+			fmt.Printf("Admin type: %T\n", a)
+			a.administrate(task.system)
+		}
+
 	}
 }
